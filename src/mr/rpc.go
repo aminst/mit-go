@@ -30,6 +30,7 @@ type SendTaskReply struct {
 	TaskType string
 	TaskId   int
 	FileName string
+	NReduce int
 }
 
 // Cook up a unique-ish UNIX-domain socket name

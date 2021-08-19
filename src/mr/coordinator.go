@@ -48,7 +48,7 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 
 func (c *Coordinator) SendTask(args *SendTaskArgs, reply *SendTaskReply) error {
 	reply.TaskType, reply.TaskId, reply.FileName = c.getTask()
-
+	reply.NReduce = c.nReduce
 	return nil
 }
 
