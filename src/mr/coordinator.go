@@ -36,16 +36,6 @@ func (c *Coordinator) getTask() (string, int, string) {
 
 // Your code here -- RPC handlers for the worker to call.
 
-//
-// an example RPC handler.
-//
-// the RPC argument and reply types are defined in rpc.go.
-//
-func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
-	reply.Y = args.X + 1
-	return nil
-}
-
 func (c *Coordinator) SendTask(args *SendTaskArgs, reply *SendTaskReply) error {
 	reply.TaskType, reply.TaskId, reply.FileName = c.getTask()
 	reply.NReduce = c.nReduce

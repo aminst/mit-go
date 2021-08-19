@@ -96,29 +96,6 @@ func CallForSendTask() SendTaskReply {
 }
 
 //
-// example function to show how to make an RPC call to the coordinator.
-//
-// the RPC argument and reply types are defined in rpc.go.
-//
-func CallExample() {
-
-	// declare an argument structure.
-	args := ExampleArgs{}
-
-	// fill in the argument(s).
-	args.X = 99
-
-	// declare a reply structure.
-	reply := ExampleReply{}
-
-	// send the RPC request, wait for the reply.
-	call("Coordinator.Example", &args, &reply)
-
-	// reply.Y should be 100.
-	fmt.Printf("reply.Y %v\n", reply.Y)
-}
-
-//
 // send an RPC request to the coordinator, wait for the response.
 // usually returns true.
 // returns false if something goes wrong.
