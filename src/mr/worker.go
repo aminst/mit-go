@@ -44,6 +44,11 @@ func runPartition(taskId int, intermediate []KeyValue, nReduce int) {
 		fmt.Fprintf(file, "%v %v\n", kv.Key, kv.Value)
 	}
 
+	for i := 0; i < nReduce; i++ {
+		fileName := fmt.Sprintf("temp-%d-%d-%d", randomPrefix, taskId, i)
+		newFileName :=fmt.Sprintf("map-%d-%d", taskId, i)
+		os.Rename(fileName, newFileName)
+	}
 }
 
 func runMap(mapf func(string, string) []KeyValue, taskId int, fileName string, nReduce int) {
