@@ -1,10 +1,13 @@
 package mr
 
+import "os"
 import "fmt"
 import "log"
 import "net/rpc"
 import "hash/fnv"
-
+import "io/ioutil"
+import "sort"
+import "math/rand"
 
 //
 // Map functions return a slice of KeyValue.
@@ -13,6 +16,12 @@ type KeyValue struct {
 	Key   string
 	Value string
 }
+
+type ByKey []KeyValue
+
+func (a ByKey) Len() int           { return len(a) }
+func (a ByKey) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByKey) Less(i, j int) bool { return a[i].Key < a[j].Key }
 
 //
 // use ihash(key) % NReduce to choose the reduce
@@ -24,25 +33,61 @@ func ihash(key string) int {
 	return int(h.Sum32() & 0x7fffffff)
 }
 
+func runPartition(taskId int, intermediate []KeyValue, nReduce int) {
+	randomPrefix := rand.Int()
+
+	sort.Sort(ByKey(intermediate))
+	for _, kv := range intermediate {
+		reduceNum := ihash(kv.Key) % nReduce
+		fileName := fmt.Sprintf("temp-%d-%d-%d", randomPrefix, taskId, reduceNum)
+		file, _ := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		fmt.Fprintf(file, "%v %v\n", kv.Key, kv.Value)
+	}
+
+}
+
+func runMap(mapf func(string, string) []KeyValue, taskId int, fileName string, nReduce int) {
+	intermediate := []KeyValue{}
+	file, err := os.Open(fileName)
+	if err != nil {
+		log.Fatalf("cannot open %v", fileName)
+	}
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatalf("cannot read %v", fileName)
+	}
+	file.Close()
+	kva := mapf(fileName, string(content))
+	intermediate = append(intermediate, kva...)
+	runPartition(taskId, intermediate, nReduce)
+	// call done
+}
+
+func runReduce(reducef func(string, []string) string, taskId int) {
+
+}
 
 //
 // main/mrworker.go calls this function.
 //
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
-
-	CallForSendTask()
-
+	
+	reply := CallForSendTask()
+	if reply.TaskType == "map" {
+		runMap(mapf, reply.TaskId, reply.FileName, reply.NReduce)
+	} else if reply.TaskType == "reduce" {
+		runReduce(reducef, reply.TaskId)
+	} else {
+		os.Exit(0)
+	}
 }
 
-func CallForSendTask() {
+func CallForSendTask() SendTaskReply {
 	args := SendTaskArgs{}
 	reply := SendTaskReply{}
 	call("Coordinator.SendTask", &args, &reply)
-
-	fmt.Printf("reply.TaskType %v\n", reply.TaskType)
-	fmt.Printf("reply.TaskId %v\n", reply.TaskId)
-	fmt.Printf("reply.FileName %v\n", reply.FileName)
+	return reply
 }
 
 //
