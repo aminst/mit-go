@@ -31,11 +31,18 @@ func ihash(key string) int {
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
 
-	// Your worker implementation here.
+	CallForSendTask()
 
-	// uncomment to send the Example RPC to the coordinator.
-	// CallExample()
+}
 
+func CallForSendTask() {
+	args := SendTaskArgs{}
+	reply := SendTaskReply{}
+	call("Coordinator.SendTask", &args, &reply)
+
+	fmt.Printf("reply.TaskType %v\n", reply.TaskType)
+	fmt.Printf("reply.TaskId %v\n", reply.TaskId)
+	fmt.Printf("reply.FileName %v\n", reply.FileName)
 }
 
 //

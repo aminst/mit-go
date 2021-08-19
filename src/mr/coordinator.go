@@ -8,8 +8,30 @@ import "net/http"
 
 
 type Coordinator struct {
-	// Your definitions here.
+	toBeAssignedMapTask int
+	toBeAssignedReduceTask int
+	files []string
+	nReduce int
+}
 
+func (c *Coordinator) getTask() (string, int, string) {
+	var taskType string
+	var taskId int
+	var fileName string
+
+	if c.toBeAssignedMapTask < len(c.files) {
+		taskType = "map"
+		taskId = c.toBeAssignedMapTask
+		fileName = c.files[c.toBeAssignedMapTask]
+		c.toBeAssignedMapTask++
+	} else if c.toBeAssignedReduceTask < c.nReduce {
+		taskType = "reduce"
+		taskId = c.toBeAssignedReduceTask
+		c.toBeAssignedReduceTask++
+	} else {
+		taskType = "die"
+	}
+	return taskType, taskId, fileName
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -21,6 +43,12 @@ type Coordinator struct {
 //
 func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 	reply.Y = args.X + 1
+	return nil
+}
+
+func (c *Coordinator) SendTask(args *SendTaskArgs, reply *SendTaskReply) error {
+	reply.TaskType, reply.TaskId, reply.FileName = c.getTask()
+
 	return nil
 }
 
@@ -62,8 +90,10 @@ func (c *Coordinator) Done() bool {
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 
-	// Your code here.
-
+	c.toBeAssignedMapTask = 0
+	c.toBeAssignedReduceTask = 0
+	c.files = files
+	c.nReduce = nReduce
 
 	c.server()
 	return &c
