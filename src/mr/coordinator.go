@@ -6,10 +6,9 @@ import "os"
 import "net/rpc"
 import "net/http"
 
-
 type Coordinator struct {
-	toBeAssignedMapTask int
-	toBeAssignedReduceTask int
+	toBeAssignedMapTaskId int
+	toBeAssignedReduceTaskId int
 	files []string
 	nReduce int
 }
@@ -19,15 +18,15 @@ func (c *Coordinator) getTask() (string, int, string) {
 	var taskId int
 	var fileName string
 
-	if c.toBeAssignedMapTask < len(c.files) {
+	if c.toBeAssignedMapTaskId < len(c.files) {
 		taskType = "map"
-		taskId = c.toBeAssignedMapTask
-		fileName = c.files[c.toBeAssignedMapTask]
-		c.toBeAssignedMapTask++
-	} else if c.toBeAssignedReduceTask < c.nReduce {
+		taskId = c.toBeAssignedMapTaskId
+		fileName = c.files[c.toBeAssignedMapTaskId]
+		c.toBeAssignedMapTaskId++
+	} else if c.toBeAssignedReduceTaskId < c.nReduce {
 		taskType = "reduce"
-		taskId = c.toBeAssignedReduceTask
-		c.toBeAssignedReduceTask++
+		taskId = c.toBeAssignedReduceTaskId
+		c.toBeAssignedReduceTaskId++
 	} else {
 		taskType = "die"
 	}
@@ -42,6 +41,10 @@ func (c *Coordinator) SendTask(args *SendTaskArgs, reply *SendTaskReply) error {
 	return nil
 }
 
+func (c *Coordinator) DoneTask(args *DoneTaskArgs, reply *DoneTaskReply) error {
+
+	return nil
+}
 
 //
 // start a thread that listens for RPCs from worker.go
@@ -80,8 +83,8 @@ func (c *Coordinator) Done() bool {
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 
-	c.toBeAssignedMapTask = 0
-	c.toBeAssignedReduceTask = 0
+	c.toBeAssignedMapTaskId = 0
+	c.toBeAssignedReduceTaskId = 0
 	c.files = files
 	c.nReduce = nReduce
 

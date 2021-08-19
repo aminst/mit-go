@@ -8,6 +8,8 @@ import "hash/fnv"
 import "io/ioutil"
 import "sort"
 import "math/rand"
+import "bufio"
+import "strings"
 
 //
 // Map functions return a slice of KeyValue.
@@ -39,13 +41,13 @@ func runPartition(taskId int, intermediate []KeyValue, nReduce int) {
 	sort.Sort(ByKey(intermediate))
 	for _, kv := range intermediate {
 		reduceNum := ihash(kv.Key) % nReduce
-		fileName := fmt.Sprintf("temp-%d-%d-%d", randomPrefix, taskId, reduceNum)
+		fileName := fmt.Sprintf("temp-%d-%d-%d", randomPrefix, reduceNum, taskId)
 		file, _ := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		fmt.Fprintf(file, "%v %v\n", kv.Key, kv.Value)
 	}
 
 	for i := 0; i < nReduce; i++ {
-		fileName := fmt.Sprintf("temp-%d-%d-%d", randomPrefix, taskId, i)
+		fileName := fmt.Sprintf("temp-%d-%d-%d", randomPrefix, i, taskId)
 		newFileName :=fmt.Sprintf("map-%d-%d", taskId, i)
 		os.Rename(fileName, newFileName)
 	}
@@ -68,7 +70,46 @@ func runMap(mapf func(string, string) []KeyValue, taskId int, fileName string, n
 	// call done
 }
 
+func readMapIntermediateFile(fileName string) []KeyValue {
+	intermediate := []KeyValue{}
+	file, _ := os.Open(fileName)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		splitted := strings.Split(scanner.Text(), " ")
+		kv := KeyValue{Key: splitted[0], Value: splitted[1]}
+		intermediate = append(intermediate, kv)
+    }
+	return intermediate
+}
+
 func runReduce(reducef func(string, []string) string, taskId int) {
+	intermediate := []KeyValue{}
+	oname := fmt.Sprintf("mr-out-%d", taskId)
+	ofile, _ := os.Create(oname)
+
+	files, _ := ioutil.ReadDir("./")
+	for _, f := range files {
+		if strings.HasPrefix(f.Name(), fmt.Sprintf("map-%d-", taskId)) {
+			intermediate = append(intermediate, readMapIntermediateFile(f.Name())...)
+		}
+	}
+
+	i := 0
+	for i < len(intermediate) {
+		j := i + 1
+		for j < len(intermediate) && intermediate[j].Key == intermediate[i].Key {
+			j++
+		}
+		values := []string{}
+		for k := i; k < j; k++ {
+			values = append(values, intermediate[k].Value)
+		}
+		output := reducef(intermediate[i].Key, values)
+
+		fmt.Fprintf(ofile, "%v %v\n", intermediate[i].Key, output)
+
+		i = j
+	}
 
 }
 
