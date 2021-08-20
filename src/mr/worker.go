@@ -1,15 +1,17 @@
 package mr
 
-import "os"
-import "fmt"
-import "log"
-import "net/rpc"
-import "hash/fnv"
-import "io/ioutil"
-import "sort"
-import "math/rand"
-import "bufio"
-import "strings"
+import (
+	"bufio"
+	"fmt"
+	"hash/fnv"
+	"io/ioutil"
+	"log"
+	"math/rand"
+	"net/rpc"
+	"os"
+	"sort"
+	"strings"
+)
 
 //
 // Map functions return a slice of KeyValue.
@@ -37,18 +39,21 @@ func ihash(key string) int {
 
 func runPartition(taskId int, intermediate []KeyValue, nReduce int) {
 	randomPrefix := rand.Int()
+	fmt.Printf("len=%d\n", len(intermediate))
 
 	sort.Sort(ByKey(intermediate))
+
 	for _, kv := range intermediate {
 		reduceNum := ihash(kv.Key) % nReduce
 		fileName := fmt.Sprintf("temp-%d-%d-%d", randomPrefix, reduceNum, taskId)
 		file, _ := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		fmt.Fprintf(file, "%v %v\n", kv.Key, kv.Value)
+		file.Close()
 	}
 
 	for i := 0; i < nReduce; i++ {
 		fileName := fmt.Sprintf("temp-%d-%d-%d", randomPrefix, i, taskId)
-		newFileName :=fmt.Sprintf("map-%d-%d", i, taskId)
+		newFileName := fmt.Sprintf("map-%d-%d", i, taskId)
 		os.Rename(fileName, newFileName)
 	}
 }
@@ -78,7 +83,7 @@ func readMapIntermediateFile(fileName string) []KeyValue {
 		splitted := strings.Split(scanner.Text(), " ")
 		kv := KeyValue{Key: splitted[0], Value: splitted[1]}
 		intermediate = append(intermediate, kv)
-    }
+	}
 	return intermediate
 }
 
@@ -118,7 +123,7 @@ func runReduce(reducef func(string, []string) string, taskId int) {
 //
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
-	
+
 	reply := CallForSendTask()
 	if reply.TaskType == "map" {
 		runMap(mapf, reply.TaskId, reply.FileName, reply.NReduce)
