@@ -40,7 +40,6 @@ func ihash(key string) int {
 
 func runPartition(taskId int, intermediate []KeyValue, nReduce int) {
 	randomPrefix := rand.Int()
-	fmt.Printf("len=%d\n", len(intermediate))
 
 	sort.Sort(ByKey(intermediate))
 
@@ -73,7 +72,7 @@ func runMap(mapf func(string, string) []KeyValue, taskId int, fileName string, n
 	kva := mapf(fileName, string(content))
 	intermediate = append(intermediate, kva...)
 	runPartition(taskId, intermediate, nReduce)
-	// call done
+	// TODO: call done
 }
 
 func readMapIntermediateFile(fileName string) []KeyValue {
@@ -116,7 +115,7 @@ func runReduce(reducef func(string, []string) string, taskId int) {
 
 		i = j
 	}
-	// call done
+	// TODO: call done
 }
 
 //
