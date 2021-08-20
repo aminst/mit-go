@@ -9,7 +9,6 @@ package mr
 import "os"
 import "strconv"
 
-
 // Add your RPC definitions here.
 type SendTaskArgs struct {
 }
@@ -18,7 +17,7 @@ type SendTaskReply struct {
 	TaskType string
 	TaskId   int
 	FileName string
-	NReduce int
+	NReduce  int
 }
 
 type DoneTaskArgs struct {
@@ -27,7 +26,6 @@ type DoneTaskArgs struct {
 }
 
 type DoneTaskReply struct {
-
 }
 
 // Cook up a unique-ish UNIX-domain socket name
