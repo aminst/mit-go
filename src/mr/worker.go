@@ -93,7 +93,7 @@ func runReduce(reducef func(string, []string) string, taskId int) {
 			intermediate = append(intermediate, readMapIntermediateFile(f.Name())...)
 		}
 	}
-
+	sort.Sort(ByKey(intermediate))
 	i := 0
 	for i < len(intermediate) {
 		j := i + 1
