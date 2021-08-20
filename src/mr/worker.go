@@ -124,13 +124,15 @@ func runReduce(reducef func(string, []string) string, taskId int) {
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
 
-	reply := CallForSendTask()
-	if reply.TaskType == "map" {
-		runMap(mapf, reply.TaskId, reply.FileName, reply.NReduce)
-	} else if reply.TaskType == "reduce" {
-		runReduce(reducef, reply.TaskId)
-	} else {
-		os.Exit(0)
+	for {
+		reply := CallForSendTask()
+		if reply.TaskType == "map" {
+			runMap(mapf, reply.TaskId, reply.FileName, reply.NReduce)
+		} else if reply.TaskType == "reduce" {
+			runReduce(reducef, reply.TaskId)
+		} else {
+			os.Exit(0)
+		}
 	}
 }
 
