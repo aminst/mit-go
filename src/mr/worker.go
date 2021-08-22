@@ -140,8 +140,10 @@ func Worker(mapf func(string, string) []KeyValue,
 func CallForSendTask() SendTaskReply {
 	args := SendTaskArgs{}
 	reply := SendTaskReply{}
-	// TODO: add return value of this call for worker termination
-	call("Coordinator.SendTask", &args, &reply)
+
+	if !call("Coordinator.SendTask", &args, &reply) {
+		os.Exit(0)
+	}
 	return reply
 }
 
