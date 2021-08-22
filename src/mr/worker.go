@@ -72,7 +72,7 @@ func runMap(mapf func(string, string) []KeyValue, taskId int, fileName string, n
 	kva := mapf(fileName, string(content))
 	intermediate = append(intermediate, kva...)
 	runPartition(taskId, intermediate, nReduce)
-	// TODO: call done
+	CallForDoneTask("map", taskId)
 }
 
 func readMapIntermediateFile(fileName string) []KeyValue {
@@ -115,7 +115,7 @@ func runReduce(reducef func(string, []string) string, taskId int) {
 
 		i = j
 	}
-	// TODO: call done
+	CallForDoneTask("reduce", taskId)
 }
 
 //
@@ -138,12 +138,24 @@ func Worker(mapf func(string, string) []KeyValue,
 }
 
 func CallForSendTask() SendTaskReply {
+
 	args := SendTaskArgs{}
 	reply := SendTaskReply{}
 
 	if !call("Coordinator.SendTask", &args, &reply) {
 		os.Exit(0)
 	}
+
+	return reply
+}
+
+func CallForDoneTask(taskType string, taskId int) DoneTaskReply {
+	args := DoneTaskArgs{}
+	args.TaskType = taskType
+	args.TaskId = taskId
+	reply := DoneTaskReply{}
+
+	call("Coordinator.DoneTask", &args, &reply)
 	return reply
 }
 
