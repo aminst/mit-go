@@ -1,23 +1,27 @@
 package mr
 
-import "log"
-import "net"
-import "os"
-import "net/rpc"
-import "net/http"
+import (
+	"log"
+	"net"
+	"net/http"
+	"net/rpc"
+	"os"
+	"sync"
+)
 
 type Coordinator struct {
-	toBeAssignedMapTaskId int
+	toBeAssignedMapTaskId    int
 	toBeAssignedReduceTaskId int
-	files []string
-	nReduce int
+	files                    []string
+	nReduce                  int
+	mu                       sync.Mutex
 }
 
 func (c *Coordinator) getTask() (string, int, string) {
 	var taskType string
 	var taskId int
 	var fileName string
-
+	c.mu.Lock()
 	if c.toBeAssignedMapTaskId < len(c.files) {
 		taskType = "map"
 		taskId = c.toBeAssignedMapTaskId
@@ -30,6 +34,7 @@ func (c *Coordinator) getTask() (string, int, string) {
 	} else {
 		taskType = "die"
 	}
+	c.mu.Unlock()
 	return taskType, taskId, fileName
 }
 
@@ -43,6 +48,7 @@ func (c *Coordinator) SendTask(args *SendTaskArgs, reply *SendTaskReply) error {
 
 func (c *Coordinator) DoneTask(args *DoneTaskArgs, reply *DoneTaskReply) error {
 
+	// TODO: implement this
 	return nil
 }
 
@@ -69,9 +75,11 @@ func (c *Coordinator) server() {
 func (c *Coordinator) Done() bool {
 	ret := false
 
-	// Your code here.
-
-
+	c.mu.Lock()
+	if c.toBeAssignedMapTaskId == len(c.files) && c.toBeAssignedReduceTaskId == c.nReduce {
+		ret = true
+	}
+	c.mu.Unlock()
 	return ret
 }
 
