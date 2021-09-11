@@ -55,6 +55,15 @@ func (c *Coordinator) getTaskId(taskType string) int {
 	return taskId
 }
 
+func (c *Coordinator) isMapTasksCompleted() bool {
+	for _, v := range c.mapTaskStatuses {
+		if !v.isDone {
+			return false
+		}
+	}
+	return true
+}
+
 func (c *Coordinator) getTask() (string, int, string) {
 	var taskType string
 	var taskId int
@@ -66,10 +75,13 @@ func (c *Coordinator) getTask() (string, int, string) {
 		taskId = c.getTaskId("map")
 		fileName = c.files[taskId]
 		c.mapTaskStatuses[taskId] = &TaskStatus{isDone: false, startTime: time.Now()}
-	} else if c.toBeAssignedReduceTaskId < c.nReduce {
+	} else if c.toBeAssignedReduceTaskId < c.nReduce && c.isMapTasksCompleted() {
 		taskType = "reduce"
 		taskId = c.getTaskId("reduce")
 		c.reduceTaskStatuses[taskId] = &TaskStatus{isDone: false, startTime: time.Now()}
+
+	} else if c.toBeAssignedReduceTaskId < c.nReduce && !c.isMapTasksCompleted() {
+		taskType = "wait"
 	} else {
 		taskType = "die"
 	}

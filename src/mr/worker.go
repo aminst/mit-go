@@ -1,7 +1,6 @@
 package mr
 
 import (
-	"bufio"
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
@@ -77,14 +76,23 @@ func runMap(mapf func(string, string) []KeyValue, taskId int, fileName string, n
 
 func readMapIntermediateFile(fileName string) []KeyValue {
 	intermediate := []KeyValue{}
-	file, _ := os.Open(fileName)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		splitted := strings.Split(scanner.Text(), " ")
-		kv := KeyValue{Key: splitted[0], Value: splitted[1]}
-		intermediate = append(intermediate, kv)
+	file, err := os.Open(fileName)
+	if err != nil {
+		log.Fatalf("cannot open %v", fileName)
+	}
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatalf("cannot read %v", fileName)
 	}
 	file.Close()
+	for _, line := range strings.Split(string(content), "\n") {
+		if len(line) == 0 {
+			continue
+		}
+		kv := KeyValue{}
+		fmt.Sscanf(line, "%s %s", &kv.Key, &kv.Value)
+		intermediate = append(intermediate, kv)
+	}
 	return intermediate
 }
 
@@ -93,7 +101,10 @@ func runReduce(reducef func(string, []string) string, taskId int) {
 	oname := fmt.Sprintf("mr-out-%d", taskId)
 	ofile, _ := os.Create(oname)
 
-	files, _ := ioutil.ReadDir("./")
+	files, err := ioutil.ReadDir("./")
+	if err != nil {
+		log.Fatalf("cannot read directory: %v", err)
+	}
 	for _, f := range files {
 		if strings.HasPrefix(f.Name(), fmt.Sprintf("map-%d-", taskId)) {
 			intermediate = append(intermediate, readMapIntermediateFile(f.Name())...)
@@ -132,6 +143,9 @@ func Worker(mapf func(string, string) []KeyValue,
 			runMap(mapf, reply.TaskId, reply.FileName, reply.NReduce)
 		} else if reply.TaskType == "reduce" {
 			runReduce(reducef, reply.TaskId)
+		} else if reply.TaskType == "wait" {
+			time.Sleep(time.Second)
+			continue
 		} else {
 			os.Exit(0)
 		}
