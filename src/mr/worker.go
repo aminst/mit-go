@@ -84,6 +84,7 @@ func readMapIntermediateFile(fileName string) []KeyValue {
 		kv := KeyValue{Key: splitted[0], Value: splitted[1]}
 		intermediate = append(intermediate, kv)
 	}
+	file.Close()
 	return intermediate
 }
 
@@ -115,6 +116,7 @@ func runReduce(reducef func(string, []string) string, taskId int) {
 
 		i = j
 	}
+	ofile.Close()
 	CallForDoneTask("reduce", taskId)
 }
 
