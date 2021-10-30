@@ -62,7 +62,8 @@ type Raft struct {
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
-
+	currentTerm int
+	votedFor    int
 }
 
 // return currentTerm and whether this server
@@ -139,6 +140,10 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 //
 type RequestVoteArgs struct {
 	// Your data here (2A, 2B).
+	Term         int
+	CandidateId  int
+	LastLogIndex int
+	LastLogTerm  int
 }
 
 //
@@ -147,6 +152,8 @@ type RequestVoteArgs struct {
 //
 type RequestVoteReply struct {
 	// Your data here (2A).
+	Term        int
+	VoteGranted bool
 }
 
 //
@@ -154,6 +161,20 @@ type RequestVoteReply struct {
 //
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
+	candidateTerm := args.Term
+	currentTerm := rf.currentTerm
+
+	if candidateTerm > currentTerm && (rf.votedFor == -1 || rf.votedFor == args.CandidateId) {
+		reply.Term = args.Term
+		reply.VoteGranted = true
+		rf.votedFor = args.CandidateId
+		return
+	} else {
+		reply.Term = currentTerm
+		reply.VoteGranted = false
+		return
+	}
+	// TODO: update votedFor to -1 when no vote in current term
 }
 
 //
@@ -264,6 +285,8 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.peers = peers
 	rf.persister = persister
 	rf.me = me
+	rf.currentTerm = 0
+	rf.votedFor = -1
 
 	// Your initialization code here (2A, 2B, 2C).
 
